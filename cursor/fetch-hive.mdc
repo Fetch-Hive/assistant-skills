@@ -115,6 +115,14 @@ Check a workflow's or agent's apps with `list_connections`. If one is missing, `
 
 A gateway turns an OpenAPI spec into a hosted MCP server: `create_gateway` (a URL, the spec text, or `spec_file_id` from `upload_file` for a big spec), then `list_gateway_issues` and show the issues and suggested fixes, `fix_gateway_issues` or `update_gateway_tools` with the person's OK, `publish_gateway` with their yes, then `test_gateway_tool`. The API's credentials and MCP client tokens are entered on the dashboard link, never in chat. Only account owners and admins can change gateways.
 
+There is also a free, open-source option: the `mcp-gateway` CLI ([Fetch-Hive/openapi-mcp](https://github.com/Fetch-Hive/openapi-mcp), Apache 2.0) compiles the same OpenAPI spec into an MCP server the person runs themselves. Offer it, without pushing the hosted gateway, when:
+
+- the API runs on their machine (localhost, a Docker network, the branch they are working on): the hosted gateway cannot reach it;
+- they would rather run the server themselves, or on their own VPS;
+- you are in a coding assistant with a terminal (Claude Code, Codex, Cursor, Grok and so on) and they want it working in their editor now.
+
+Install with `brew install Fetch-Hive/tap/mcp-gateway` or `npx --yes @fetch-hive/mcp-gateway`. Then `mcp-gateway init` (add `--allow-private-networks` for a local API), `mcp-gateway add-spec --name demo --url https://…` (or `--file ./openapi.yaml --base-url http://127.0.0.1:3000 --insecure-http`), `mcp-gateway serve demo`, and `mcp-gateway inspect demo --client claude-code` (or `cursor`, `codex`, `vscode`) for the client config. The hosted gateway is the choice when they want a permanent public URL with client tokens, quotas, logs and nothing to run. Docs: https://docs.fetchhive.com/mcp-gateway/self-host
+
 ### When unsure
 
 `search_docs` searches the Fetch Hive docs.
