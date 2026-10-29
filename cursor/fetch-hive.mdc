@@ -52,7 +52,7 @@ The connector works in one workspace, chosen when the person connected it. Start
 
 1. `search_workflows` and `search_agents` for what the person already has. Open one with `get_workflow` or `get_agent` before running or changing it.
 2. `search_templates` for the template library and the account's own templates. `get_template` explains a template and its inputs; `use_template` copies it into the workspace, the same as the **Use template** button.
-3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft.
+3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft. Building is free.
    - If `build` asks questions, put them to the person and pass their answers back. Don't answer for them.
    - A build can take a couple of minutes. Check it with `get_build` and tell the person when it's ready.
 
@@ -89,6 +89,7 @@ Check a workflow's or agent's apps with `list_connections`. If one is missing, `
 - Poll `get_run` until `done` is true, then give the person the output. `list_runs` lists recent runs.
 - When a run fails, `diagnose_run` says why and whether trying again may help. `retry_run` repeats it (paid, so ask). `cancel_run` stops a workflow run that is still going.
 - `list_run_files` gives download links for files a run made.
+- When a run, workflow, agent or build keeps going wrong, offer to tell Fetch Hive with `report_problem` (one id and what went wrong, in the person's words).
 - `upload_file` puts a file the person gives you (text or base64, up to 4 MB) in the Media Library and returns a `file_url` to pass as a run input. For a bigger file you can send from a shell, `get_upload_link` gives a one-file PUT link; then call `upload_file` with its `upload_id`.
 
 ### Deploying, scheduling and sharing
@@ -518,7 +519,10 @@ Don't retry a failed paid run in a loop. Retry only errors that say retrying may
 - A test run is stopped if it goes over the cost limit it quoted or runs too long; `get_test_run` says why.
 - `check_test_run` has a daily limit per account.
 - If a run fails, `diagnose_run` gives the likely cause (credits, app connection, permissions, rate limits, timeout, inputs, output format, approval, provider error) and whether trying again may help.
+- `customer_mcp_spend_limit`: this connection reached the daily spend limit an owner or admin set. Finding and changing things still works; paid steps wait until midnight UTC. Tell the person, and give them `settings_url` if they want to raise it. Don't retry.
+- `customer_mcp_account_off`: an owner or admin turned off assistant access for the account. Every call is refused until they turn it back on in **Settings → Security**. Stop and tell the person.
+- When something keeps going wrong, `report_problem` tells the Fetch Hive team (with a run, workflow, agent or build id and the person's own words; no secrets or personal data). It doesn't fix anything.
 
 ### Costs
 
-Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.
+Connecting an assistant, finding or changing workflows and agents, and building new ones with `build` use no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.

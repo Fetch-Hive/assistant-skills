@@ -40,7 +40,10 @@ Don't retry a failed paid run in a loop. Retry only errors that say retrying may
 - A test run is stopped if it goes over the cost limit it quoted or runs too long; `get_test_run` says why.
 - `check_test_run` has a daily limit per account.
 - If a run fails, `diagnose_run` gives the likely cause (credits, app connection, permissions, rate limits, timeout, inputs, output format, approval, provider error) and whether trying again may help.
+- `customer_mcp_spend_limit`: this connection reached the daily spend limit an owner or admin set. Finding and changing things still works; paid steps wait until midnight UTC. Tell the person, and give them `settings_url` if they want to raise it. Don't retry.
+- `customer_mcp_account_off`: an owner or admin turned off assistant access for the account. Every call is refused until they turn it back on in **Settings → Security**. Stop and tell the person.
+- When something keeps going wrong, `report_problem` tells the Fetch Hive team (with a run, workflow, agent or build id and the person's own words; no secrets or personal data). It doesn't fix anything.
 
 ## Costs
 
-Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.
+Connecting an assistant, finding or changing workflows and agents, and building new ones with `build` use no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.

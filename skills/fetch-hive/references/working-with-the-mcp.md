@@ -12,7 +12,7 @@ The connector works in one workspace, chosen when the person connected it. Start
 
 1. `search_workflows` and `search_agents` for what the person already has. Open one with `get_workflow` or `get_agent` before running or changing it.
 2. `search_templates` for the template library and the account's own templates. `get_template` explains a template and its inputs; `use_template` copies it into the workspace, the same as the **Use template** button.
-3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft.
+3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft. Building is free.
    - If `build` asks questions, put them to the person and pass their answers back. Don't answer for them.
    - A build can take a couple of minutes. Check it with `get_build` and tell the person when it's ready.
 
@@ -49,6 +49,7 @@ Check a workflow's or agent's apps with `list_connections`. If one is missing, `
 - Poll `get_run` until `done` is true, then give the person the output. `list_runs` lists recent runs.
 - When a run fails, `diagnose_run` says why and whether trying again may help. `retry_run` repeats it (paid, so ask). `cancel_run` stops a workflow run that is still going.
 - `list_run_files` gives download links for files a run made.
+- When a run, workflow, agent or build keeps going wrong, offer to tell Fetch Hive with `report_problem` (one id and what went wrong, in the person's words).
 - `upload_file` puts a file the person gives you (text or base64, up to 4 MB) in the Media Library and returns a `file_url` to pass as a run input. For a bigger file you can send from a shell, `get_upload_link` gives a one-file PUT link; then call `upload_file` with its `upload_id`.
 
 ## Deploying, scheduling and sharing
