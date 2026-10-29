@@ -1,6 +1,11 @@
 # Working in a workspace with the Fetch Hive MCP
 
-The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in.
+The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in, the person's role (and so what they can change), and how many assistant calls are left today.
+
+## Spend and plan limits
+
+- `get_usage` shows what runs cost over `today`, `7d`, `30d` (default) or `billing_period`, by workflow and by agent, plus the tasks and hosted model wallet left. Costs are the same total as **Dashboard → Analytics**. Use it for "what am I spending?" and "which workflow costs most?".
+- `get_plan_limits` lists what the plan allows (steps per workflow, iteration size, runs at once, workspaces, team members, storage and more) and what is in use. When something is refused for a plan limit, check here and explain the limit instead of retrying. Plan changes happen on the billing page; the tool gives the link.
 
 ## Find before you build
 

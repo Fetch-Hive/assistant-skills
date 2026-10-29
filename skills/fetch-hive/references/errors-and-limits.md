@@ -12,7 +12,7 @@ Errors are JSON with a human-readable `message`, a stable `error_code`, and `err
 | --- | --- | --- |
 | 400 / 422 | `validation_error`, `invalid_request` | Fix the request: missing `deployment` or `variant`, wrong input types, nested `metadata`, `async.enabled` without a valid `callback_url`, or a direct call to a workflow with a Human in the Loop step |
 | 401 | `invalid_api_key`, `unauthorized` | `FETCH_HIVE_API_KEY` is missing, wrong or revoked. Ask the person to check it in **Settings → API Keys**; don't ask for the value |
-| 402 | `insufficient_hosted_llm_credits`, plan limits | The workspace is out of credits or over a plan limit. The person tops up or upgrades in Billing |
+| 402 | `insufficient_hosted_llm_credits`, plan limits | The workspace is out of credits or over a plan limit. `get_usage` and `get_plan_limits` show which. The person tops up or upgrades in Billing |
 | 403 | `forbidden`, `tool_approval_override_not_permitted` | The key isn't allowed to do this. For auto-approve, an owner or admin must allow the key, or drop the field |
 | 404 | `not_found` | The deployment, variant, agent or run doesn't exist in this workspace. Check the names with `get_integration_code` |
 | 409 / 410 | | Tool approval already decided / expired |
@@ -43,4 +43,4 @@ Don't retry a failed paid run in a loop. Retry only errors that say retrying may
 
 ## Costs
 
-Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run.
+Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.

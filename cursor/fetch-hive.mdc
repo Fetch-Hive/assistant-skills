@@ -40,7 +40,12 @@ Docs: https://docs.fetchhive.com
 
 ## Working in a workspace with the Fetch Hive MCP
 
-The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in.
+The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in, the person's role (and so what they can change), and how many assistant calls are left today.
+
+### Spend and plan limits
+
+- `get_usage` shows what runs cost over `today`, `7d`, `30d` (default) or `billing_period`, by workflow and by agent, plus the tasks and hosted model wallet left. Costs are the same total as **Dashboard → Analytics**. Use it for "what am I spending?" and "which workflow costs most?".
+- `get_plan_limits` lists what the plan allows (steps per workflow, iteration size, runs at once, workspaces, team members, storage and more) and what is in use. When something is refused for a plan limit, check here and explain the limit instead of retrying. Plan changes happen on the billing page; the tool gives the link.
 
 ### Find before you build
 
@@ -475,7 +480,7 @@ Errors are JSON with a human-readable `message`, a stable `error_code`, and `err
 | --- | --- | --- |
 | 400 / 422 | `validation_error`, `invalid_request` | Fix the request: missing `deployment` or `variant`, wrong input types, nested `metadata`, `async.enabled` without a valid `callback_url`, or a direct call to a workflow with a Human in the Loop step |
 | 401 | `invalid_api_key`, `unauthorized` | `FETCH_HIVE_API_KEY` is missing, wrong or revoked. Ask the person to check it in **Settings → API Keys**; don't ask for the value |
-| 402 | `insufficient_hosted_llm_credits`, plan limits | The workspace is out of credits or over a plan limit. The person tops up or upgrades in Billing |
+| 402 | `insufficient_hosted_llm_credits`, plan limits | The workspace is out of credits or over a plan limit. `get_usage` and `get_plan_limits` show which. The person tops up or upgrades in Billing |
 | 403 | `forbidden`, `tool_approval_override_not_permitted` | The key isn't allowed to do this. For auto-approve, an owner or admin must allow the key, or drop the field |
 | 404 | `not_found` | The deployment, variant, agent or run doesn't exist in this workspace. Check the names with `get_integration_code` |
 | 409 / 410 | | Tool approval already decided / expired |
@@ -506,4 +511,4 @@ Don't retry a failed paid run in a loop. Retry only errors that say retrying may
 
 ### Costs
 
-Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run.
+Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run, and `get_usage` what has been spent so far.
