@@ -1,0 +1,20 @@
+{
+  "name": "fetch-hive",
+  "version": "1.0.0",
+  "description": "Build, test, run and schedule Fetch Hive workflows and agents from Claude Code, and add them to your own app with no secrets in the code.",
+  "author": {
+    "name": "Fetch Hive",
+    "url": "https://fetchhive.com"
+  },
+  "homepage": "https://docs.fetchhive.com/workspace/connect-assistants",
+  "repository": "https://github.com/Fetch-Hive/assistant-skills",
+  "keywords": [
+    "fetch-hive",
+    "workflows",
+    "agents",
+    "mcp",
+    "automation"
+  ],
+  "license": "MIT",
+  "privacyPolicyUrl": "https://fetchhive.com/privacy"
+}

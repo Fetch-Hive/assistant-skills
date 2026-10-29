@@ -1,0 +1,509 @@
+---
+description: Use when the person works with Fetch Hive workflows or agents, either through the Fetch Hive MCP connector (find, build, change, test, run, schedule, share) or in their own code (call a workflow or agent from an app, handle callbacks, webhooks and tool approvals). Covers when to reuse a template, asking before anything paid or public, and adding a Fetch Hive call to a codebase with no secrets in it.
+alwaysApply: false
+---
+
+<!-- Built by scripts/build from skills/fetch-hive. Edit those files, not this one. -->
+
+# Fetch Hive
+
+Fetch Hive runs AI workflows (a chain of steps such as search, AI prompt, Slack or Notion) and agents (a model with tools that answers messages). This skill covers two jobs:
+
+1. **Working in the person's workspace** through the Fetch Hive MCP connector (`https://connect.fetchhive.com/mcp`). Read references/working-with-the-mcp.md (below).
+2. **Calling Fetch Hive from the person's own code**, for example "add this workflow to my Next.js app". Read references/calling-from-code.md (below), and references/callbacks-and-approvals.md (below) when the run is long, uses callbacks or webhooks, or can wait for a tool approval.
+
+When something fails, read references/errors-and-limits.md (below).
+
+## Rules that always apply
+
+- **Ask before anything paid or public.** Runs, test runs, retries, deploys, schedules and share pages cost credits or act in the outside world. Call the tool without `approved` first: it answers with the cost (and the inputs it would use). Show that to the person, and pass `approved: true` only after they say yes. Never start the same paid run twice without asking.
+- **Never handle secrets in chat.** Don't ask the person to paste an API key, a webhook secret, an app password or an MCP client token. Connecting apps and creating keys happen on the dashboard links the tools return.
+- **Keys live in environment variables.** Code reads the workspace API key from `FETCH_HIVE_API_KEY`, and a callback signing secret from its own variable such as `FETCH_HIVE_WEBHOOK_SECRET`. Never write a real key into code, a commit, a log line or a client-side bundle. Call Fetch Hive from server code only.
+- **Reuse before building.** Look for an existing workflow or agent, then a template, before building something new.
+- **Approvals are the person's call.** When a run waits for a tool approval, show the exact action and decide only with the person's own answer (`allow_once` or `deny`). "Always allow" is set by the person on the dashboard.
+
+## From "build me X" to "add X to my app"
+
+1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template`, else `build`.
+2. Check its apps with `list_connections`; `connect_app` gives the person a link for a missing one.
+3. Prove it works: `test_run_draft` (sample data, sends switched off; paid, so ask) and `run_qa` for a score and fixes. Or a real `run_workflow` / `run_agent` with the person's yes.
+4. A workflow must be deployed before code can call it: `deploy_workflow` (ask first). Agents need no deploy.
+5. Call `get_integration_code` with the `workflow_id` or `agent_id`. It returns curl, TypeScript and Python with the real deployment, variant and inputs, and the webhook trigger URL for a workflow. Use it as the source of truth for names; don't guess them.
+6. Write the code into the person's project following references/calling-from-code.md (below): server-side only, key from `FETCH_HIVE_API_KEY`, add the variable to `.env.example` (empty value) and tell the person to set it from **Settings → API Keys**.
+7. If the workflow can run longer than a short request, or contains a Human in the Loop step, use callback delivery and verify the signature (references/callbacks-and-approvals.md (below)).
+
+## Without the MCP connector
+
+The code paths still work. Ask the person for the deployment name and variant (shown under **Get Code** on the workflow) or the agent ID (shown under **Get Code** in the agent editor), never for the key itself.
+
+Docs: https://docs.fetchhive.com
+
+## Working in a workspace with the Fetch Hive MCP
+
+The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in.
+
+### Find before you build
+
+1. `search_workflows` and `search_agents` for what the person already has. Open one with `get_workflow` or `get_agent` before running or changing it.
+2. `search_templates` for the template library and the account's own templates. `get_template` explains a template and its inputs; `use_template` copies it into the workspace, the same as the **Use template** button.
+3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft.
+   - If `build` asks questions, put them to the person and pass their answers back. Don't answer for them.
+   - A build can take a couple of minutes. Check it with `get_build` and tell the person when it's ready.
+
+Reuse a template when it does most of the job and the rest is a change of inputs or a step. Build when the request needs a different chain of steps or apps.
+
+Choose a **workflow** for a fixed sequence that runs the same way each time (reports, enrichment, scheduled jobs, bulk runs). Choose an **agent** for a conversation or a task where the model decides which tools to call.
+
+### Apps and connections
+
+Check a workflow's or agent's apps with `list_connections`. If one is missing, `connect_app` returns a link; the person connects the app on the dashboard. Never ask for an app password or token in chat.
+
+### Changing a workflow or agent
+
+- `update_workflow` renames a workflow, changes its description, or adds and removes start inputs.
+- `get_step`, `add_step`, `edit_step` and `remove_step` change steps. `list_step_types` and `get_step_type` give each step's settings and the placeholder rules for using earlier outputs.
+- Every step change is saved as a version. `list_versions` and `restore_version` undo a change; `duplicate_workflow` makes a copy first if the person wants to experiment.
+- `update_agent`, `set_agent_tools` (keys from `list_agent_tools`) and `set_agent_knowledge` change an agent. They return the previous values so you can undo.
+- A step can't be removed while another step uses its output. Change the other step first.
+- Assistants can't add app actions that delete data. The person adds those in the editor.
+
+### Testing
+
+- `test_run_draft` runs a workflow as it stands with sample data for steps that read from apps, and with sends and review steps switched off, so nothing reaches anyone. It is paid: quote first, then `approved: true` after the person's yes. It is stopped if it goes over the cost limit it quotes.
+- `get_test_run` shows each step's result, the step that failed and the cost. `list_test_runs` lists recent test runs of a workflow.
+- `run_qa` scores a finished test run out of 100 (80 passes) and says what to fix. Read the result with `get_test_run`.
+
+### Running
+
+- `estimate_cost` gives what a workflow or agent run usually costs.
+- `run_workflow` runs the current version once, like the editor's **Run** button. `run_agent` sends a message to an agent, optionally with a `response_format` JSON schema for this call. Both quote without `approved` and run with `approved: true`.
+- Poll `get_run` until `done` is true, then give the person the output. `list_runs` lists recent runs.
+- When a run fails, `diagnose_run` says why and whether trying again may help. `retry_run` repeats it (paid, so ask). `cancel_run` stops a workflow run that is still going.
+- `list_run_files` gives download links for files a run made.
+
+### Deploying, scheduling and sharing
+
+- `deploy_workflow` publishes the current version so the API, webhooks and schedules use it. Ask first.
+- `list_schedules`, `set_schedule`, `pause_schedule`, `resume_schedule`. Setting or resuming a schedule needs the person's yes; it shows when it will run and the cost per run. Pausing happens at once.
+- `share_workflow` makes a public link anyone can run, billed to the account. Show the person the title, description and input guidance first, and publish only after they approve. `update_share` changes one; `run_share` checks it works.
+
+### Calling it from the person's app
+
+`get_integration_code` with `workflow_id` (deployed) or `agent_id` returns ready-to-paste curl, TypeScript and Python with the real names and inputs. See calling-from-code.md (below).
+
+### Approvals
+
+`list_approvals` shows app actions waiting for a person. Show the exact action, then call `decide_approval` with the person's own answer: `allow_once` or `deny`. To always allow an action, give the person the `review_url`.
+
+### MCP gateways
+
+A gateway turns an OpenAPI spec into a hosted MCP server: `create_gateway`, then `list_gateway_issues` and show the issues and suggested fixes, `fix_gateway_issues` or `update_gateway_tools` with the person's OK, `publish_gateway` with their yes, then `test_gateway_tool`. The API's credentials and MCP client tokens are entered on the dashboard link, never in chat. Only account owners and admins can change gateways.
+
+### When unsure
+
+`search_docs` searches the Fetch Hive docs.
+
+## Calling Fetch Hive from the person's code
+
+Base URL: `https://api.fetchhive.com/v1`. Every request sends the workspace API key as `Authorization: Bearer <key>`, read from the `FETCH_HIVE_API_KEY` environment variable.
+
+### Before you write code
+
+- Get the real names from `get_integration_code` (MCP) or from **Get Code** on the dashboard: a workflow's **deployment** and **variant**, or an agent's ID. Don't invent them.
+- A workflow must be deployed. If it isn't, deploy it (`deploy_workflow`, with the person's yes) or tell them to deploy it in the editor.
+- Inputs are the workflow's **Start** step inputs, with matching types. Array inputs are real JSON arrays.
+
+### Keys and where the code runs
+
+- Call Fetch Hive from server code only: an API route, server action, backend job or worker. Never from browser code, a mobile app bundle or anything a visitor can read.
+- Read the key from `FETCH_HIVE_API_KEY`. Add `FETCH_HIVE_API_KEY=` (empty) to `.env.example` and tell the person to create a key in **Settings → API Keys** and set it in their environment and hosting provider. Don't ask them to paste it to you.
+- Make sure `.env` files with real values are in `.gitignore`.
+
+### Workflows
+
+`POST /v1/workflow/invoke`
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `deployment` | yes | Deployment name |
+| `variant` | yes | Variant name |
+| `inputs` | no | Start step inputs |
+| `async` | no | `{ "enabled": true, "callback_url": "https://..." }` for callback delivery |
+| `metadata` | no | Flat object of strings, numbers, booleans or null, for log filtering. Not workflow input |
+| `tool_approval` | no | `"policy"` (default) or `"auto_approve"` when the key is allowed to auto-approve |
+
+Without `async`, the call waits for the workflow and returns `{ request_id, run_status, output }`. If it runs past the wait window it is cancelled and returns `504` with `run_status: "failed"`. Use callback delivery for long workflows, and always for workflows with a Human in the Loop step (a direct call to those returns a validation error).
+
+#### TypeScript (`@fetch-hive/sdk`, Node 18+)
+
+```bash
+npm install @fetch-hive/sdk
+```
+
+```typescript
+import { FetchHive } from '@fetch-hive/sdk';
+
+const client = new FetchHive(); // reads FETCH_HIVE_API_KEY
+
+const run = await client.invokeWorkflow({
+  deployment: 'DEPLOYMENT_NAME',
+  variant: 'VARIANT_NAME',
+  inputs: { topic: 'State of enterprise AI in 2026' },
+});
+
+if (run.status !== 'completed') throw new Error(`Workflow ${run.request_id} ended ${run.status}`);
+console.log(run.output);
+```
+
+#### Next.js route handler
+
+```typescript
+// app/api/report/route.ts
+import { FetchHive } from '@fetch-hive/sdk';
+
+const client = new FetchHive();
+
+export async function POST(request: Request) {
+  const { topic } = await request.json();
+  if (typeof topic !== 'string' || !topic.trim()) {
+    return Response.json({ error: 'topic is required' }, { status: 400 });
+  }
+
+  const run = await client.invokeWorkflow({
+    deployment: 'DEPLOYMENT_NAME',
+    variant: 'VARIANT_NAME',
+    inputs: { topic },
+  });
+
+  if (run.status !== 'completed') {
+    return Response.json({ error: 'The report could not be generated', request_id: run.request_id }, { status: 502 });
+  }
+  return Response.json({ report: run.output });
+}
+```
+
+Check the person's own auth and rate limits on this route: every call runs the workflow on their credits.
+
+#### Python (`fetch-hive-sdk`, Python 3.9+)
+
+```bash
+pip install fetch-hive-sdk
+```
+
+```python
+from fetch_hive_sdk import FetchHive
+
+client = FetchHive()  # reads FETCH_HIVE_API_KEY
+
+run = client.invoke_workflow(
+    deployment="DEPLOYMENT_NAME",
+    variant="VARIANT_NAME",
+    inputs={"topic": "State of enterprise AI in 2026"},
+)
+if run["run_status"] != "completed":
+    raise RuntimeError(f"Workflow {run['request_id']} ended {run['run_status']}")
+print(run["output"])
+```
+
+The Python SDK's default timeout is 120 seconds (`FetchHive(timeout=...)`). Prefer callback delivery to a longer timeout.
+
+#### curl
+
+```bash
+curl https://api.fetchhive.com/v1/workflow/invoke \
+  -H "Authorization: Bearer $FETCH_HIVE_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"deployment":"DEPLOYMENT_NAME","variant":"VARIANT_NAME","inputs":{"topic":"State of enterprise AI in 2026"}}'
+```
+
+Other languages: Ruby and PHP SDKs are in the docs under Workflows → Run with Ruby SDK / Run with PHP SDK.
+
+### Agents
+
+`POST /v1/agent/invoke`
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `agent` | yes | Agent ID |
+| `message` | yes | The message |
+| `streaming` | no | `true` for server-sent events |
+| `thread_id` | no | Any string. Fetch Hive keeps the conversation and resumes it on the next call with the same value |
+| `messages` | no | Earlier turns you manage yourself, `{ role, content }`. Not stored |
+| `attachments` | no | Up to five `https://` file URLs (CSV, XLSX, PDF, DOCX, text, images) |
+| `response_format` | no | A JSON schema for this call's answer (below) |
+| `metadata`, `tool_approval` | no | As for workflows |
+| `async` | no | `{ "callback_url": "https://..." }` for background work |
+
+Use a stable `thread_id` per conversation, such as your user or ticket ID, rather than sending the whole history each time.
+
+To get JSON back instead of text, send `response_format` on the call (it applies to that call only):
+
+```json
+{
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "competitors",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": { "competitors": { "type": "array", "items": { "type": "string" } } },
+        "required": ["competitors"],
+        "additionalProperties": false
+      }
+    }
+  }
+}
+```
+
+#### TypeScript
+
+```typescript
+import { FetchHive } from '@fetch-hive/sdk';
+
+const client = new FetchHive();
+
+const reply = await client.invokeAgent({
+  agent: 'AGENT_ID',
+  message: 'Summarise this week’s support tickets',
+  thread_id: `support-${userId}`,
+});
+
+if (reply.status === 'awaiting_approval') {
+  // see callbacks-and-approvals.md
+}
+console.log(reply.response);
+```
+
+Streaming to the browser from a server route:
+
+```typescript
+// app/api/chat/route.ts
+import { FetchHive } from '@fetch-hive/sdk';
+
+const client = new FetchHive();
+
+export async function POST(request: Request) {
+  const { message, threadId } = await request.json();
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of client.invokeAgentStream({ agent: 'AGENT_ID', message, thread_id: threadId })) {
+          if (chunk.type === 'response' && chunk.response) controller.enqueue(encoder.encode(chunk.response));
+          if (chunk.type === 'error') controller.enqueue(encoder.encode('\n[The agent hit an error. Please try again.]'));
+        }
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+```
+
+Stream events, in order when present: `summary`, `reasoning`, `response`, `tool`, `tool_approval`, then a final `usage` (or `error`).
+
+#### Python
+
+```python
+from fetch_hive_sdk import FetchHive
+
+client = FetchHive()
+
+reply = client.invoke_agent(agent="AGENT_ID", message="Summarise this week's support tickets", thread_id="support-42")
+print(reply["response"])
+
+for chunk in client.invoke_agent_stream(agent="AGENT_ID", message="And last week?", thread_id="support-42"):
+    if chunk.get("type") == "response":
+        print(chunk.get("response", ""), end="", flush=True)
+```
+
+#### curl
+
+```bash
+curl https://api.fetchhive.com/v1/agent/invoke \
+  -H "Authorization: Bearer $FETCH_HIVE_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"agent":"AGENT_ID","message":"Summarise this week’s support tickets","streaming":false}'
+```
+
+### Tests to add
+
+Mock the SDK client or the HTTP call in the person's tests; don't call Fetch Hive from a test suite, since every call is a paid run. Test the inputs you send, the handling of `failed` and `awaiting_approval`, and the missing-key case.
+
+## Callbacks, webhook triggers and tool approvals
+
+### Three separate things
+
+- **API invoke** starts a run with the workspace API key (`POST /v1/workflow/invoke`, `POST /v1/agent/invoke`).
+- **Webhook trigger** lets another service start a deployed workflow or an agent without an API key, using the deployment's or agent's webhook secret in `X-Fetch-Hive-Webhook-Secret`.
+- **Callback delivery** returns at once and later POSTs a signed event with the result to your `callback_url`.
+
+The same secret is used both ways: a trigger sends it to prove it may start the run, and Fetch Hive signs callbacks with it. Keep it in an environment variable such as `FETCH_HIVE_WEBHOOK_SECRET`. The person copies it from **Get Code** (Signing secret) on the workflow deployment or agent; never ask for it in chat.
+
+### Callback delivery for a workflow
+
+```typescript
+const run = await client.invokeWorkflow({
+  deployment: 'DEPLOYMENT_NAME',
+  variant: 'VARIANT_NAME',
+  inputs: { topic },
+  async: { enabled: true, callback_url: `${process.env.APP_URL}/api/fetch-hive/callback` },
+});
+// run.status is "running" or "queued"; store run.request_id against your own record
+```
+
+Python: `client.invoke_workflow(..., async_mode=True, callback_url="https://...")`.
+
+Use callback delivery when the workflow may run longer than a normal request, and always when it has a Human in the Loop step. Save the returned `request_id` with your own record so the callback can find it.
+
+### Callback events
+
+Every callback has the same envelope:
+
+```json
+{ "event_type": "workflow.completed", "request_id": "req_...", "data": { "output": "..." } }
+```
+
+- Workflows: `workflow.completed` (`data.output`), `workflow.failed` (`data.error`), `workflow.cancelled` (`data.error`, `data.reason: "cancelled"`). All three are final.
+- Agents: `agent.completed` (`data.response`, and `data.output_json` when a `response_format` was sent), `agent.failed` (`data.error`), `agent.awaiting_approval` (`pending_tool_approvals`, `review_url`). After an approval, a later `agent.completed` carries `resumed_from_run_id`.
+
+Make the handler idempotent: a delivery can be retried, so look the record up by `request_id` and ignore an event you've already applied. Answer quickly with a 2xx and do slow work after.
+
+### Verifying the signature
+
+Each callback has `X-Fetch-Hive-Signature`, `X-Fetch-Hive-Timestamp` and `X-Fetch-Hive-Webhook-Id`. The signature is the hex HMAC SHA256 of `{timestamp}.{raw request body}` with the webhook secret. Verify against the raw body exactly as received (not re-serialised JSON), reject timestamps more than 5 minutes old, and compare in constant time. Treat anything that fails as untrusted.
+
+#### Next.js route handler
+
+```typescript
+// app/api/fetch-hive/callback/route.ts
+import crypto from 'node:crypto';
+
+export async function POST(request: Request) {
+  const secret = process.env.FETCH_HIVE_WEBHOOK_SECRET;
+  const signature = request.headers.get('x-fetch-hive-signature') ?? '';
+  const timestamp = request.headers.get('x-fetch-hive-timestamp') ?? '';
+  const raw = await request.text();
+
+  if (!secret || !signature || !timestamp) return new Response('unauthorised', { status: 401 });
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return new Response('stale', { status: 401 });
+
+  const expected = crypto.createHmac('sha256', secret).update(`${timestamp}.${raw}`).digest('hex');
+  const valid =
+    expected.length === signature.length &&
+    crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  if (!valid) return new Response('bad signature', { status: 401 });
+
+  const event = JSON.parse(raw) as { event_type: string; request_id: string; data: Record<string, unknown> };
+  switch (event.event_type) {
+    case 'workflow.completed':
+      // save event.data.output against the record with event.request_id
+      break;
+    case 'workflow.failed':
+    case 'workflow.cancelled':
+      // mark the record failed with event.data.error
+      break;
+  }
+  return new Response(null, { status: 204 });
+}
+```
+
+#### Python (FastAPI)
+
+```python
+import hashlib, hmac, json, os, time
+from fastapi import FastAPI, HTTPException, Request
+
+app = FastAPI()
+
+@app.post("/fetch-hive/callback")
+async def fetch_hive_callback(request: Request):
+    secret = os.environ["FETCH_HIVE_WEBHOOK_SECRET"]
+    signature = request.headers.get("x-fetch-hive-signature", "")
+    timestamp = request.headers.get("x-fetch-hive-timestamp", "")
+    raw = await request.body()
+
+    if not signature or not timestamp or abs(time.time() - int(timestamp)) > 300:
+        raise HTTPException(status_code=401)
+    expected = hmac.new(secret.encode(), f"{timestamp}.".encode() + raw, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=401)
+
+    event = json.loads(raw)
+    # handle event["event_type"], keyed by event["request_id"]
+    return {"ok": True}
+```
+
+### Webhook triggers
+
+Workflow: `POST https://api.fetchhive.com/v1/workflow/webhooks/{endpoint_id}/variants/{variant_id}`. Agent: `POST https://api.fetchhive.com/v1/agent/webhooks/{agent_id}`. Get the exact URL from `get_integration_code` or **Get Code** → **Webhook trigger**.
+
+```bash
+curl "$FETCH_HIVE_TRIGGER_URL" \
+  -H "X-Fetch-Hive-Webhook-Secret: $FETCH_HIVE_WEBHOOK_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{"inputs":{"topic":"State of enterprise AI in 2026"},"async":{"callback_url":"https://example.com/callback"}}'
+```
+
+Triggers always need `async.callback_url` and always deliver the result by callback. For a workflow, a body without `inputs` is treated as the inputs. Optional `user` and `metadata` sit beside `inputs`. An agent trigger needs `message` and can take `thread_id` and `response_format`. If the sending service can't set headers, `?secret=` works as a fallback; prefer the header.
+
+### Tool approvals in the person's app
+
+Agent actions that write to apps, and destructive actions, can pause the run until someone approves them.
+
+- A non-streaming agent response then has `status: "awaiting_approval"` and `pending_tool_approvals` (each with `approval_id`, `tool_name`, `summary`, `arguments`, `expires_at` and `review_url`). A streaming call sends a `tool_approval` event and the same fields on the final `usage` event.
+- Show the person in your app what is waiting. Decide with the API key: `POST /v1/public/workspaces/{workspace_id}/tool_action_approvals/{id}/decide` with `decision` `allow_once` or `deny` (SDK: `decideToolActionApproval` / `decide_tool_action_approval`), or send them to the `review_url`.
+- After the decision the run continues on the server by itself. Don't re-invoke the thread; poll or wait for the callback (`agent.completed` with `resumed_from_run_id`).
+- "Always allow" can only be set on the dashboard. A second decision returns `409`; an expired approval returns `410`.
+- A trusted server can skip approvals for one call with `tool_approval: "auto_approve"`, only if a workspace owner or admin allowed that API key to auto-approve (**Settings → API Keys**). Destructive actions still ask, and Deny rules still block. Don't turn this on for the person; tell them where it is if they want it.
+
+## Errors and limits
+
+### Reading an API error
+
+Errors are JSON with a human-readable `message`, a stable `error_code`, and `error` (same text, kept for older clients). Branch on `error_code`, not on the message text.
+
+```json
+{ "error": "Invalid access.", "message": "Invalid access.", "error_code": "invalid_api_key" }
+```
+
+| Status | Common `error_code` | What to do |
+| --- | --- | --- |
+| 400 / 422 | `validation_error`, `invalid_request` | Fix the request: missing `deployment` or `variant`, wrong input types, nested `metadata`, `async.enabled` without a valid `callback_url`, or a direct call to a workflow with a Human in the Loop step |
+| 401 | `invalid_api_key`, `unauthorized` | `FETCH_HIVE_API_KEY` is missing, wrong or revoked. Ask the person to check it in **Settings → API Keys**; don't ask for the value |
+| 402 | `insufficient_hosted_llm_credits`, plan limits | The workspace is out of credits or over a plan limit. The person tops up or upgrades in Billing |
+| 403 | `forbidden`, `tool_approval_override_not_permitted` | The key isn't allowed to do this. For auto-approve, an owner or admin must allow the key, or drop the field |
+| 404 | `not_found` | The deployment, variant, agent or run doesn't exist in this workspace. Check the names with `get_integration_code` |
+| 409 / 410 | | Tool approval already decided / expired |
+| 422 | | Also "You've reached your credit cap." |
+| 429 | `api_rate_limit_exceeded`, `concurrency_limit_reached`, `too_many_requests` | Back off and retry later. For many runs at once, use callback delivery |
+| 502 | | A model provider failed. Retrying may help |
+| 504 | | A direct workflow call ran past the wait window and was cancelled. Use callback delivery |
+
+### Run outcomes
+
+A request can succeed and the run still fail. Check `run_status` (workflows) or `status` (agents):
+
+- `completed`: use `output` / `response`.
+- `failed`: show a friendly message and log the `request_id`; the person can open the run in **Logs** in the dashboard, or ask the assistant to `diagnose_run`.
+- `cancelled`: final, someone stopped it.
+- `running` / `queued`: only with callback delivery; wait for the callback.
+- `awaiting_approval` (agents): see callbacks-and-approvals.md (below).
+
+Don't retry a failed paid run in a loop. Retry only errors that say retrying may help (429, 502), with backoff and a small cap.
+
+### In the MCP
+
+- Paid tools answer with a quote and `needs_approval` until called with `approved: true`. That's not an error: show the cost and ask.
+- "Too many requests": each connection has per-minute and per-day limits on requests, runs and builds. Wait a minute and try again; tell the person if it keeps happening.
+- A test run is stopped if it goes over the cost limit it quoted or runs too long; `get_test_run` says why.
+- `run_qa` has a daily limit per account.
+- If a run fails, `diagnose_run` gives the likely cause (credits, app connection, permissions, rate limits, timeout, inputs, output format, approval, provider error) and whether trying again may help.
+
+### Costs
+
+Connecting an assistant, and finding or changing workflows and agents, uses no credits. Runs, test runs, retries, scheduled runs and share page runs use workspace credits, the same as runs started on the dashboard. `estimate_cost` gives the usual cost before a run.

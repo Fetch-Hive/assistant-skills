@@ -1,0 +1,11 @@
+{
+  "name": "fetch-hive",
+  "owner": { "name": "Fetch Hive", "url": "https://fetchhive.com" },
+  "plugins": [
+    {
+      "name": "fetch-hive",
+      "source": "./",
+      "description": "The Fetch Hive skill plus the Fetch Hive MCP connector: build, test, run and schedule workflows and agents, and call them from your code."
+    }
+  ]
+}

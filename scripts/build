@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Builds the downloads from skills/fetch-hive, the only source to edit:
+#   fetch-hive.zip          for Claude web and Desktop (Settings > Capabilities > Skills > Upload)
+#   cursor/fetch-hive.mdc   the same content as one Cursor rules file
+# Run it after every change to the skill and commit the results with it.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SRC="$ROOT/skills/fetch-hive"
+MDC="$ROOT/cursor/fetch-hive.mdc"
+
+if grep -rEn 'fh_live_[A-Za-z0-9]{8,}|fhk_[A-Za-z0-9]{8,}' "$SRC"; then
+  echo "ERROR: something that looks like a real API key is in the skill" >&2
+  exit 1
+fi
+
+rm -f "$ROOT/fetch-hive.zip"
+# -X and a fixed timestamp keep the zip identical when the files are unchanged
+(cd "$ROOT/skills" && find fetch-hive -exec touch -t 202601010000 {} + && zip -qrX "$ROOT/fetch-hive.zip" fetch-hive)
+
+description="$(sed -n 's/^description: //p' "$SRC/SKILL.md" | head -1)"
+mkdir -p "$(dirname "$MDC")"
+{
+  echo '---'
+  echo "description: $description"
+  echo 'alwaysApply: false'
+  echo '---'
+  echo
+  echo '<!-- Built by scripts/build from skills/fetch-hive. Edit those files, not this one. -->'
+  # SKILL.md without its frontmatter, then each reference file one heading level down
+  awk 'BEGIN { fm = 0 } /^---$/ && fm < 2 { fm++; next } fm >= 2 { print }' "$SRC/SKILL.md"
+  for ref in working-with-the-mcp calling-from-code callbacks-and-approvals errors-and-limits; do
+    echo
+    awk '/^```/ { code = !code } !code && /^#/ { $0 = "#" $0 } { print }' "$SRC/references/$ref.md"
+  done
+} | sed -E 's#\[([^]]+)\]\((references/)?[a-z-]+\.md\)#\1 (below)#g' > "$MDC"
+
+echo "Built fetch-hive.zip and cursor/fetch-hive.mdc"
