@@ -38,7 +38,7 @@ Don't retry a failed paid run in a loop. Retry only errors that say retrying may
 - Paid tools answer with a quote and `needs_approval` until called with `approved: true`. That's not an error: show the cost and ask.
 - "Too many requests": each connection has per-minute and per-day limits on requests, runs and builds. Wait a minute and try again; tell the person if it keeps happening.
 - A test run is stopped if it goes over the cost limit it quoted or runs too long; `get_test_run` says why.
-- `run_qa` has a daily limit per account.
+- `check_test_run` has a daily limit per account.
 - If a run fails, `diagnose_run` gives the likely cause (credits, app connection, permissions, rate limits, timeout, inputs, output format, approval, provider error) and whether trying again may help.
 
 ## Costs

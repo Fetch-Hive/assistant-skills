@@ -14,7 +14,7 @@ When something fails, read [references/errors-and-limits.md](references/errors-a
 
 ## Rules that always apply
 
-- **Ask before anything paid or public.** Runs, test runs, retries, deploys, schedules and share pages cost credits or act in the outside world. Call the tool without `approved` first: it answers with the cost (and the inputs it would use). Show that to the person, and pass `approved: true` only after they say yes. Never start the same paid run twice without asking.
+- **Ask before anything paid or public.** Runs, test runs, retries, deploys, schedules, share pages, prompt runs and knowledge base sources cost credits or act in the outside world, and archiving or a new webhook secret changes what is live. Call the tool without `approved` first: it answers with the cost (and the inputs it would use). Show that to the person, and pass `approved: true` only after they say yes. Never start the same paid run twice without asking.
 - **Never handle secrets in chat.** Don't ask the person to paste an API key, a webhook secret, an app password or an MCP client token. Connecting apps and creating keys happen on the dashboard links the tools return.
 - **Keys live in environment variables.** Code reads the workspace API key from `FETCH_HIVE_API_KEY`, and a callback signing secret from its own variable such as `FETCH_HIVE_WEBHOOK_SECRET`. Never write a real key into code, a commit, a log line or a client-side bundle. Call Fetch Hive from server code only.
 - **Reuse before building.** Look for an existing workflow or agent, then a template, before building something new.
@@ -24,7 +24,7 @@ When something fails, read [references/errors-and-limits.md](references/errors-a
 
 1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template`, else `build`.
 2. Check its apps with `list_connections`; `connect_app` gives the person a link for a missing one.
-3. Prove it works: `test_run_draft` (sample data, sends switched off; paid, so ask) and `run_qa` for a score and fixes. Or a real `run_workflow` / `run_agent` with the person's yes.
+3. Prove it works: `test_run_draft` (sample data, sends switched off; paid, so ask) and `check_test_run` for a score and what to improve; offer to fix it and test again. Or a real `run_workflow` / `run_agent` with the person's yes.
 4. A workflow must be deployed before code can call it: `deploy_workflow` (ask first). Agents need no deploy.
 5. Call `get_integration_code` with the `workflow_id` or `agent_id`. It returns curl, TypeScript and Python with the real deployment, variant and inputs, and the webhook trigger URL for a workflow. Use it as the source of truth for names; don't guess them.
 6. Write the code into the person's project following [references/calling-from-code.md](references/calling-from-code.md): server-side only, key from `FETCH_HIVE_API_KEY`, add the variable to `.env.example` (empty value) and tell the person to set it from **Settings → API Keys**.

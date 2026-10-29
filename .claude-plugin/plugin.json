@@ -1,6 +1,6 @@
 {
   "name": "fetch-hive",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Build, test, run and schedule Fetch Hive workflows and agents from Claude Code, and add them to your own app with no secrets in the code.",
   "author": {
     "name": "Fetch Hive",
