@@ -24,7 +24,7 @@ When something fails, read references/errors-and-limits.md (below).
 
 ## From "build me X" to "add X to my app"
 
-1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template`, else `build`.
+1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template` (or `use_share` when the person gave you a share link), else `build`.
 2. Check its apps with `list_connections`; `connect_app` gives the person a link for a missing one.
 3. Prove it works: `test_run_draft` (sample data, sends switched off; paid, so ask) and `check_test_run` for a score and what to improve; offer to fix it and test again. Or a real `run_workflow` / `run_agent` with the person's yes.
 4. A workflow must be deployed before code can call it: `deploy_workflow` (ask first). Agents need no deploy.
@@ -52,6 +52,7 @@ The connector works in one workspace, chosen when the person connected it. Start
 
 1. `search_workflows` and `search_agents` for what the person already has. Open one with `get_workflow` or `get_agent` before running or changing it.
 2. `search_templates` for the template library and the account's own templates. `get_template` explains a template and its inputs; `use_template` copies it into the workspace, the same as the **Use template** button.
+   - If the person gives you a Fetch Hive share link (a public page for a shared workflow or agent), `use_share` with that link copies it into the workspace, the same as **Edit this workflow** on the page. It is free and runs nothing; then read it with `get_workflow` or `get_agent` and run it with the person's yes.
 3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft. Building is free.
    - If `build` asks questions, put them to the person and pass their answers back. Don't answer for them.
    - A build can take a couple of minutes. Check it with `get_build` and tell the person when it's ready.

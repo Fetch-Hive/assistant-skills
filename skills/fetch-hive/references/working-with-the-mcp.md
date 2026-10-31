@@ -12,6 +12,7 @@ The connector works in one workspace, chosen when the person connected it. Start
 
 1. `search_workflows` and `search_agents` for what the person already has. Open one with `get_workflow` or `get_agent` before running or changing it.
 2. `search_templates` for the template library and the account's own templates. `get_template` explains a template and its inputs; `use_template` copies it into the workspace, the same as the **Use template** button.
+   - If the person gives you a Fetch Hive share link (a public page for a shared workflow or agent), `use_share` with that link copies it into the workspace, the same as **Edit this workflow** on the page. It is free and runs nothing; then read it with `get_workflow` or `get_agent` and run it with the person's yes.
 3. Only when nothing fits, `build` makes a new workflow or agent from the person's request and saves it as a draft. Building is free.
    - If `build` asks questions, put them to the person and pass their answers back. Don't answer for them.
    - A build can take a couple of minutes. Check it with `get_build` and tell the person when it's ready.

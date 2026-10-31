@@ -22,7 +22,7 @@ When something fails, read [references/errors-and-limits.md](references/errors-a
 
 ## From "build me X" to "add X to my app"
 
-1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template`, else `build`.
+1. Find or build it with the MCP: `search_workflows` / `search_agents`, then `search_templates` and `use_template` (or `use_share` when the person gave you a share link), else `build`.
 2. Check its apps with `list_connections`; `connect_app` gives the person a link for a missing one.
 3. Prove it works: `test_run_draft` (sample data, sends switched off; paid, so ask) and `check_test_run` for a score and what to improve; offer to fix it and test again. Or a real `run_workflow` / `run_agent` with the person's yes.
 4. A workflow must be deployed before code can call it: `deploy_workflow` (ask first). Agents need no deploy.
