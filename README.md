@@ -53,4 +53,4 @@ Your assistant asks before anything that costs credits or acts in your connected
 
 Edit the Markdown in `skills/fetch-hive/`, then run `scripts/build` to rebuild `fetch-hive.zip` and `cursor/fetch-hive.mdc`, and commit all of it together. Keep the content in step with the [Fetch Hive docs](https://docs.fetchhive.com).
 
-Privacy: [fetchhive.com/privacy](https://fetchhive.com/privacy). License: MIT.
+Privacy: [fetchhive.com/legal/privacy-policy](https://fetchhive.com/legal/privacy-policy). License: MIT.
