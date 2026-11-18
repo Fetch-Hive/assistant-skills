@@ -5,7 +5,7 @@ description: Use when the person works with Fetch Hive workflows or agents, eith
 
 # Fetch Hive
 
-Fetch Hive runs AI workflows (a chain of steps such as search, AI prompt, Slack or Notion) and agents (a model with tools that answers messages). This skill covers two jobs:
+Fetch Hive runs AI workflows (a chain of steps such as search, AI prompt, Slack or Notion), pipelines (several workflows in a row, with checkpoints where the person decides) and agents (a model with tools that answers messages). This skill covers two jobs:
 
 1. **Working in the person's workspace** through the Fetch Hive MCP connector (`https://connect.fetchhive.com/mcp`). Read [references/working-with-the-mcp.md](references/working-with-the-mcp.md).
 2. **Calling Fetch Hive from the person's own code**, for example "add this workflow to my Next.js app". Read [references/calling-from-code.md](references/calling-from-code.md), and [references/callbacks-and-approvals.md](references/callbacks-and-approvals.md) when the run is long, uses callbacks or webhooks, or can wait for a tool approval.
@@ -19,6 +19,7 @@ When something fails, read [references/errors-and-limits.md](references/errors-a
 - **Keys live in environment variables.** Code reads the workspace API key from `FETCH_HIVE_API_KEY`, and a callback signing secret from its own variable such as `FETCH_HIVE_WEBHOOK_SECRET`. Never write a real key into code, a commit, a log line or a client-side bundle. Call Fetch Hive from server code only.
 - **Reuse before building.** Look for an existing workflow or agent, then a template, before building something new.
 - **Approvals are the person's call.** When a run waits for a tool approval, show the exact action and decide only with the person's own answer (`allow_once` or `deny`). "Always allow" is set by the person on the dashboard.
+- **Pipeline checkpoints are the person's call too.** When a pipeline run waits at a checkpoint, show the person what it asks and send only their own answer with `answer_checkpoint`. Never choose, approve or edit for them. Quote before `run_pipeline` and `rerun_pipeline`, as for any paid run.
 
 ## From "build me X" to "add X to my app"
 
