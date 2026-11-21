@@ -47,6 +47,7 @@ Check a workflow's or agent's apps with `list_connections`. If one is missing, `
 
 - `estimate_cost` gives what a workflow or agent run usually costs.
 - `run_workflow` runs the current version once, like the editor's **Run** button. `run_agent` sends a message to an agent, optionally with a `response_format` JSON schema for this call. Both quote without `approved` and run with `approved: true`.
+- `run_step` runs one step on its own, with no workflow saved, for a one-off lookup: what ChatGPT or Gemini answer and cite for a query (`chat_gpt_llm_scraper`, `gemini_llm_scraper`), what Google AI Mode or the AI Overview says (`google_ai_mode`, `google_ai_overview`), a search, backlinks, a page scrape, or reading from a connected app. Take the `step_type` from `list_step_types` and its settings from `get_step_type`; pass `queries` (two or more) to run the same lookup for several queries at once. It quotes without `approved` and runs with `approved: true`; read the result with `get_run`, then analyse it for the person. Steps that send or change things are refused: use a workflow for those.
 - Poll `get_run` until `done` is true, then give the person the output. `list_runs` lists recent runs.
 - When a run fails, `diagnose_run` says why and whether trying again may help. `retry_run` repeats it (paid, so ask). `cancel_run` stops a workflow run that is still going.
 - `list_run_files` gives download links for files a run made.
