@@ -69,7 +69,7 @@ A pipeline runs several workflows one after another and stops at checkpoints whe
 
 - `deploy_pipeline` copies the pipeline as it is now to a deployment variant (default: its first deployment, variant `production`), which the public API and pipeline schedules run. `run_pipeline` does not need it. Called without `approved` it says what would change; ask first.
 - `deploy_workflow` publishes the current version so the API, webhooks and schedules use it. Ask first.
-- `list_schedules`, `set_schedule`, `pause_schedule`, `resume_schedule`. Setting or resuming a schedule needs the person's yes; it shows when it will run and the cost per run. Pausing happens at once.
+- `list_schedules`, `set_schedule`, `pause_schedule`, `resume_schedule`. Setting or resuming a schedule needs the person's yes; it shows when it will run and the cost per run. Pausing happens at once. For a pipeline, pass `pipeline_id` (and the `deployment` and `variant` from `deploy_pipeline`, or leave them out for the default); it has no test run and is on once saved.
 - `share_workflow` makes a public link anyone can run, billed to the account. Show the person the title, description and input guidance first, and publish only after they approve. `update_share` changes one; `run_share` checks it works.
 
 ## Knowledge bases and prompts
