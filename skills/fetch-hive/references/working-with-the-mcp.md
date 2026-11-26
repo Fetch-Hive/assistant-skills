@@ -1,6 +1,16 @@
 # Working in a workspace with the Fetch Hive MCP
 
-The connector works in one workspace, chosen when the person connected it. Start with `whoami` to see which workspace and account you are in, the person's role (and so what they can change), and how many assistant calls are left today.
+Start with `whoami` to see which workspace and account you are in, the person's role (and so what they can change), and how many assistant calls are left today.
+
+## One workspace or several
+
+When the person connected Fetch Hive they chose one workspace, or all of their workspaces. `whoami` says which (`workspace_scope`: `one` or `all`).
+
+- **One workspace.** Everything happens there. If the person gives you an id that is "not found", it may be in another of their workspaces: tell them, and say they can connect Fetch Hive again and choose **All my workspaces**. Do not offer a different record in its place.
+- **All workspaces.** `list_workspaces` gives each workspace's name and id and marks the default. Every tool takes `workspace_id`.
+  - Reading: without `workspace_id` you read the default workspace. Reading one thing by its id (a run, workflow, agent or pipeline) finds it in whichever workspace it is in. Every answer says which workspace it came from (`workspace`).
+  - Building, changing, running, scheduling, sharing or deploying: you must pass `workspace_id`. Use the workspace the person named (look its id up with `list_workspaces`), or the workspace of the record you just read. If you cannot tell, ask the person. Never guess.
+  - When you ask for a yes on something paid or public outside the default workspace, name the workspace.
 
 ## Spend and plan limits
 
